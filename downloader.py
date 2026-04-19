@@ -9,7 +9,8 @@ if(len(sys.argv or (not "path=" in sys.argv[1] and not "projectID=" in sys.argv[
     print("Wrong arguments!\nUsage: python downloader.py [path=path/modpack/manifest.json | projectID=project id]")
     exit()
 
-ID_URL = "https://addons-ecs.forgesvc.net/api/v2/addon/"
+#ID_URL = "https://addons-ecs.forgesvc.net/api/v2/addon/"
+BASE_API = "https://api.curseforge.com/v1"
 BASE_URL = "https://www.curseforge.com/minecraft/mc-mods/"
 
 MANIFEST_PATH = sys.argv[1]
@@ -42,13 +43,19 @@ with open(MANIFEST_PATH, 'r') as manifestfile:
     manifest = json.load(manifestfile)
     for file in manifest["files"]:
         id = file["projectID"]
-
-        res = requests.get(url=ID_URL + str(id), headers=HEADER).json()
+        url = f"https://api.curseforge.com/v1/mods/{id}"
+        res = requests.get(url=url + str(id), headers=HEADER).json()
 
         makedirs(CWD + "overrides/mods/", exist_ok=True)
         makedirs(CWD + "overrides/resourcepacks/", exist_ok=True)
 
-        download = requests.get(res["websiteUrl"] + "/download/" + str(file["fileID"]), allow_redirects=True)
+        #download = requests.get(res["websiteUrl"] + "/download/" + str(file["fileID"]), allow_redirects=True)
+        file_info = requests.get(
+                f"https://api.curseforge.com/v1/mods/{id}/files/{file_id}",
+                headers=HEADER).json()["data"]
+
+        download_url = file_info["downloadUrl"]
+        download = requests.get(download_url)
         if("mc-mods" in res["websiteUrl"]):
             with open(CWD + "overrides/mods/" + str.replace(res["websiteUrl"], BASE_URL, '') + ".jar", 'wb') as modjar:
                 modjar.write(download.content)
